@@ -1,0 +1,6 @@
+/target
+node_modules/
+.env
+*.local
+/res/*.wasm
+.near-credentials/
