@@ -125,7 +125,7 @@ async fn outlayer_failures_skip_the_day_and_never_stall() -> anyhow::Result<()> 
             .transact()
             .await?;
         assert!(r.is_success());
-        assert_eq!(r.json::<bool>()?, false);
+        assert!(!r.json::<bool>()?);
     }
     let day0 = env.view(&env.core, "get_day", json!({ "day": 0 })).await?;
     assert_eq!(day0["status"], "Failed");

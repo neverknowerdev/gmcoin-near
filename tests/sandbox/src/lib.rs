@@ -166,7 +166,7 @@ pub fn ok(r: ExecutionFinalResult) -> Result<ExecutionFinalResult> {
     if r.is_failure() {
         anyhow::bail!("transaction failed: {:#?}", r.failures());
     }
-    for f in r.receipt_failures() {
+    if let Some(f) = r.receipt_failures().first() {
         anyhow::bail!("receipt failed: {:#?}", f);
     }
     Ok(r)

@@ -104,7 +104,7 @@ impl Contract {
             // Panicking here would revert the queue pop, so fail in a
             // follow-up receipt whose result becomes this call's result.
             Scripted::Panic => {
-                Promise::new(env::current_account_id())
+                let _ = Promise::new(env::current_account_id())
                     .function_call(
                         "fail_now",
                         vec![],
