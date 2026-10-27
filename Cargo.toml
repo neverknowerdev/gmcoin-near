@@ -10,6 +10,7 @@ members = [
     "contracts/mock-outlayer",
     "tests/sandbox",
     "tests/modules",
+    "tests/testnet",
 ]
 # OutLayer modules build for wasm32-wasip2 in their own workspace.
 exclude = ["modules"]

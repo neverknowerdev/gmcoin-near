@@ -5,3 +5,4 @@ node_modules/
 /res/*.wasm
 .near-credentials/
 /modules/target
+deploy/*.out.json
