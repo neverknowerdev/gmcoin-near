@@ -4,3 +4,4 @@ node_modules/
 *.local
 /res/*.wasm
 .near-credentials/
+/modules/target

@@ -4,11 +4,15 @@ members = [
     "crates/epochs",
     "crates/gm-scoring",
     "crates/caps",
+    "crates/x-client",
     "contracts/token",
     "contracts/core",
     "contracts/mock-outlayer",
     "tests/sandbox",
+    "tests/modules",
 ]
+# OutLayer modules build for wasm32-wasip2 in their own workspace.
+exclude = ["modules"]
 
 [workspace.package]
 edition = "2021"

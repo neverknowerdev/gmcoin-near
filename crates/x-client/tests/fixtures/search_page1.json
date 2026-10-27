@@ -1,0 +1,17 @@
+{"data":{"search_by_raw_query":{"search_timeline":{"timeline":{"instructions":[
+ {"type":"TimelineAddEntries","entries":[
+  {"entryId":"tweet-1850000000000000010","content":{"content":{"tweet_results":{"rest_id":"1850000000000000010","result":{
+    "rest_id":"1850000000000000010",
+    "core":{"user_results":{"result":{"rest_id":"101","core":{"name":"Alice","screen_name":"alice_gm"},"profile_bio":{"description":""}}}},
+    "legacy":{"full_text":"gm frens","favorite_count":4,"created_at":"Sun Nov 01 09:00:00 +0000 2026"}}}}}},
+  {"entryId":"tweet-1850000000000000011","content":{"content":{"tweet_results":{"rest_id":"1850000000000000011","result":{
+    "tweet":{"rest_id":"1850000000000000011",
+      "core":{"user_results":{"result":{"rest_id":"101","core":{"name":"Alice","screen_name":"alice_gm"}}}},
+      "legacy":{"full_text":"Today is a $GM day!","favorite_count":250,"created_at":"Sun Nov 01 10:00:00 +0000 2026"}}}}}}},
+  {"entryId":"tweet-1850000000000000012","content":{"content":{"tweet_results":{"rest_id":"1850000000000000012","result":{
+    "rest_id":"1850000000000000012",
+    "core":{"user_results":{"result":{"rest_id":"202","core":{"name":"Bob","screen_name":"bob"}}}},
+    "legacy":{"full_text":"#gm everyone","favorite_count":1,"created_at":"Sun Nov 01 23:59:59 +0000 2026"}}}}}},
+  {"entryId":"cursor-bottom-0","content":{"cursor_type":"Bottom","value":"CURSOR_PAGE_2"}}
+ ]}
+]}}}}}
