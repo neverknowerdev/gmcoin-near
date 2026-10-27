@@ -126,16 +126,16 @@ impl T {
         self.as_(acc(name), NEAR / 10);
         let _ = self.c.verify_x_link(None);
         self.as_core();
-        let ok = self.c.on_x_verified(
+        let ok = self.c.apply_x_verified(
             U64(id),
             code,
-            Ok(Some(VerifyOutput {
+            Some(VerifyOutput {
                 ok: true,
                 x_id: Some(x_id.into()),
                 handle: Some(format!("h{x_id}")),
                 post_id: Some("1".into()),
                 error: None,
-            })),
+            }),
         );
         assert!(ok);
         id
@@ -159,21 +159,21 @@ impl T {
 
     fn scanned(&mut self, day: u32, from: u32, to: u32, scores: Vec<(u64, u64)>) -> bool {
         self.as_core();
-        self.c.on_scan(
+        self.c.apply_scan(
             day,
             from,
             to,
-            Ok(Some(ScanOutput {
+            Some(ScanOutput {
                 ok: true,
                 scores,
                 error: None,
-            })),
+            }),
         )
     }
 
     fn scan_failed(&mut self, day: u32, from: u32, to: u32) -> bool {
         self.as_core();
-        self.c.on_scan(day, from, to, Ok(None))
+        self.c.apply_scan(day, from, to, None)
     }
 
     fn user(&self, name: &str) -> User {
@@ -314,14 +314,14 @@ fn x_id_is_unique_across_users() {
     t.as_(acc("bob.testnet"), NEAR / 10);
     let _ = t.c.verify_x_link(None);
     t.as_core();
-    let ok = t.c.on_x_verified(
+    let ok = t.c.apply_x_verified(
         U64(id),
         code,
-        Ok(Some(VerifyOutput {
+        Some(VerifyOutput {
             ok: true,
             x_id: Some("111".into()),
             ..Default::default()
-        })),
+        }),
     );
     assert!(!ok);
     let p = t.c.get_pending_link(acc("bob.testnet")).unwrap();
@@ -340,8 +340,8 @@ fn failed_or_stale_verification_does_not_link() {
         t.c.verify_x_link(Some("https://x.com/alice/status/123".into()));
     t.as_core();
     // A callback for an old code is ignored.
-    assert!(!t.c.on_x_verified(U64(id), "GM00OLD".into(), Ok(None)));
-    assert!(!t.c.on_x_verified(U64(id), code, Ok(None)));
+    assert!(!t.c.apply_x_verified(U64(id), "GM00OLD".into(), None));
+    assert!(!t.c.apply_x_verified(U64(id), code, None));
     let p = t.c.get_pending_link(acc("alice.testnet")).unwrap();
     assert_eq!(p.last_error.as_deref(), Some("OutLayer run failed"));
     assert!(t.user("alice.testnet").x_id.is_none());
@@ -370,7 +370,7 @@ fn sponsored_checks_are_capped_per_user() {
         t.as_(acc("a.testnet"), 0);
         let _ = t.c.verify_x_link(None);
         t.as_core();
-        t.c.on_x_verified(U64(id), code, Ok(None));
+        t.c.apply_x_verified(U64(id), code, None);
     }
     t.as_(acc("a.testnet"), 0);
     t.c.start_x_link();
@@ -525,12 +525,12 @@ fn failed_mint_is_retried_with_the_same_batch_id() {
     t.settle();
     // Batch ids: 1 = scan tip, 2 = settle tip, 3 = settle chunk.
     t.as_core();
-    assert!(!t.c.on_minted(U64(3), Err(near_sdk::PromiseError::Failed)));
+    assert!(!t.c.apply_minted(U64(3), false));
     assert_eq!(t.c.status().failed_mints, 1);
     assert!(t.settle(), "retry counts as work");
     assert_eq!(t.c.status().failed_mints, 0);
     t.as_core();
-    assert!(t.c.on_minted(U64(3), Ok(())));
+    assert!(t.c.apply_minted(U64(3), true));
     assert_eq!(t.user("a.testnet").delivered, t.user("a.testnet").accrued);
 }
 

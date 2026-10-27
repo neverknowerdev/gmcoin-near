@@ -4,7 +4,7 @@
 
 use near_sdk::json_types::{U128, U64};
 use near_sdk::serde_json::json;
-use near_sdk::{env, near, AccountId, Gas, NearToken, Promise, PromiseError, PromiseOrValue};
+use near_sdk::{env, near, AccountId, Gas, NearToken, Promise, PromiseOrValue};
 
 use crate::outlayer;
 use crate::*;
@@ -110,71 +110,15 @@ impl Contract {
     }
 
     #[private]
-    pub fn on_scan(
-        &mut self,
-        day: DayIndex,
-        from: u32,
-        to: u32,
-        #[callback_result] result: Result<Option<ScanOutput>, PromiseError>,
-    ) -> bool {
-        let Some(mut d) = self.days.get(&day).cloned() else {
-            return false;
-        };
-        if d.status != DayStatus::Scanning {
-            return false;
-        }
-        let Some(pos) = d
-            .in_flight
-            .iter()
-            .position(|b| b.from == from && b.to == to)
-        else {
-            return false;
-        };
-        let mut batch = d.in_flight.remove(pos);
+    pub fn on_scan(&mut self, day: DayIndex, from: u32, to: u32) -> bool {
+        let out = crate::outlayer::read_output::<ScanOutput>();
+        self.apply_scan(day, from, to, out)
+    }
 
-        let ok = match result {
-            Ok(Some(out)) if out.ok => {
-                let allowed: Vec<UserId> = (from..to)
-                    .filter_map(|i| self.linked.get(i).copied())
-                    .collect();
-                let mut seen: Vec<UserId> = Vec::new();
-                for (uid, points) in out.scores {
-                    if points == 0 || !allowed.contains(&uid) || seen.contains(&uid) {
-                        continue;
-                    }
-                    seen.push(uid);
-                    self.record_score(&mut d, uid, points);
-                }
-                true
-            }
-            _ => false,
-        };
-        if !ok {
-            batch.attempts += 1;
-            if batch.attempts >= self.config.scan_max_attempts {
-                d.status = DayStatus::Failed;
-                d.in_flight.clear();
-                d.retry.clear();
-                self.scan_day = day + 1;
-                event("day_failed", json!({ "day": day }));
-            } else {
-                d.retry.push(batch);
-            }
-        }
-        if d.status == DayStatus::Scanning
-            && d.scan_cursor >= d.scan_end
-            && d.in_flight.is_empty()
-            && d.retry.is_empty()
-        {
-            d.status = DayStatus::Scanned;
-            self.scan_day = day + 1;
-            event(
-                "day_scanned",
-                json!({ "day": day, "total_points": d.total_points }),
-            );
-        }
-        self.days.insert(day, d);
-        ok
+    #[private]
+    pub fn on_minted(&mut self, batch_id: U64) -> bool {
+        let ok = env::promise_result_checked(0, 1024).is_ok();
+        self.apply_minted(batch_id, ok)
     }
 
     /// Settles the oldest scanned day: computes payouts and mints one chunk.
@@ -313,34 +257,6 @@ impl Contract {
         PromiseOrValue::Promise(self.mint(batch))
     }
 
-    #[private]
-    pub fn on_minted(
-        &mut self,
-        batch_id: U64,
-        #[callback_result] result: Result<(), PromiseError>,
-    ) -> bool {
-        let Some(batch) = self.pending_mints.get(&batch_id.0).cloned() else {
-            return false;
-        };
-        if result.is_err() {
-            if !self.failed_mints.contains(&batch_id.0) {
-                self.failed_mints.push(batch_id.0);
-            }
-            event("mint_failed", json!({ "batch_id": batch_id }));
-            return false;
-        }
-        for (uid, _, amount) in &batch.entries {
-            if let Some(uid) = uid {
-                if let Some(mut user) = self.users.get(uid).cloned() {
-                    user.delivered.0 += amount.0;
-                    self.users.insert(*uid, user);
-                }
-            }
-        }
-        self.pending_mints.remove(&batch_id.0);
-        true
-    }
-
     /// Closes the current epoch once all its days are settled, and sets the
     /// next week's budget by the emission rules. Returns false when not due.
     pub fn close_epoch(&mut self) -> bool {
@@ -388,6 +304,96 @@ impl Contract {
 }
 
 impl Contract {
+    pub(crate) fn apply_scan(
+        &mut self,
+        day: DayIndex,
+        from: u32,
+        to: u32,
+        out: Option<ScanOutput>,
+    ) -> bool {
+        let Some(mut d) = self.days.get(&day).cloned() else {
+            return false;
+        };
+        if d.status != DayStatus::Scanning {
+            return false;
+        }
+        let Some(pos) = d
+            .in_flight
+            .iter()
+            .position(|b| b.from == from && b.to == to)
+        else {
+            return false;
+        };
+        let mut batch = d.in_flight.remove(pos);
+
+        let ok = match out {
+            Some(out) if out.ok => {
+                let allowed: Vec<UserId> = (from..to)
+                    .filter_map(|i| self.linked.get(i).copied())
+                    .collect();
+                let mut seen: Vec<UserId> = Vec::new();
+                for (uid, points) in out.scores {
+                    if points == 0 || !allowed.contains(&uid) || seen.contains(&uid) {
+                        continue;
+                    }
+                    seen.push(uid);
+                    self.record_score(&mut d, uid, points);
+                }
+                true
+            }
+            _ => false,
+        };
+        if !ok {
+            batch.attempts += 1;
+            if batch.attempts >= self.config.scan_max_attempts {
+                d.status = DayStatus::Failed;
+                d.in_flight.clear();
+                d.retry.clear();
+                self.scan_day = day + 1;
+                event("day_failed", json!({ "day": day }));
+            } else {
+                d.retry.push(batch);
+            }
+        }
+        if d.status == DayStatus::Scanning
+            && d.scan_cursor >= d.scan_end
+            && d.in_flight.is_empty()
+            && d.retry.is_empty()
+        {
+            d.status = DayStatus::Scanned;
+            self.scan_day = day + 1;
+            event(
+                "day_scanned",
+                json!({ "day": day, "total_points": d.total_points }),
+            );
+        }
+        self.days.insert(day, d);
+        ok
+    }
+
+    pub(crate) fn apply_minted(&mut self, batch_id: U64, ok: bool) -> bool {
+        let Some(batch) = self.pending_mints.get(&batch_id.0).cloned() else {
+            return false;
+        };
+        if !ok {
+            if !self.failed_mints.contains(&batch_id.0) {
+                self.failed_mints.push(batch_id.0);
+            }
+            event("mint_failed", json!({ "batch_id": batch_id }));
+            return false;
+        }
+        for (uid, _, amount) in &batch.entries {
+            if let Some(uid) = uid {
+                if let Some(mut user) = self.users.get(uid).cloned() {
+                    user.delivered.0 += amount.0;
+                    self.users.insert(*uid, user);
+                }
+            }
+        }
+        self.pending_mints.remove(&batch_id.0);
+        true
+    }
+
     fn record_score(&mut self, day: &mut Day, uid: UserId, points: u64) {
         let d = day.index;
         self.scores.insert((d, day.score_count), (uid, points));

@@ -78,3 +78,15 @@ pub fn request(
         GasWeight(1),
     )
 }
+
+/// Reads a module's JSON output from the OutLayer promise. A failed call, a
+/// `null` (failed or timed-out run), oversized or malformed output all give
+/// `None`, so a bad run can never make core's callback panic.
+pub fn read_output<T: near_sdk::serde::de::DeserializeOwned>() -> Option<T> {
+    let bytes = env::promise_result_checked(0, MAX_OUTPUT_BYTES).ok()?;
+    near_sdk::serde_json::from_slice::<Option<T>>(&bytes)
+        .ok()
+        .flatten()
+}
+
+pub const MAX_OUTPUT_BYTES: usize = 16 * 1024;

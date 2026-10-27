@@ -3,7 +3,7 @@
 use gm_scoring::link_code;
 use near_sdk::json_types::{U128, U64};
 use near_sdk::serde_json::json;
-use near_sdk::{env, near, require, AccountId, NearToken, Promise, PromiseError};
+use near_sdk::{env, near, require, AccountId, NearToken, Promise};
 
 use crate::outlayer;
 use crate::*;
@@ -223,11 +223,18 @@ impl Contract {
     }
 
     #[private]
-    pub fn on_x_verified(
+    pub fn on_x_verified(&mut self, user_id: U64, code: String) -> bool {
+        let out = crate::outlayer::read_output::<VerifyOutput>();
+        self.apply_x_verified(user_id, code, out)
+    }
+}
+
+impl Contract {
+    pub(crate) fn apply_x_verified(
         &mut self,
         user_id: U64,
         code: String,
-        #[callback_result] result: Result<Option<VerifyOutput>, PromiseError>,
+        out: Option<VerifyOutput>,
     ) -> bool {
         let id = user_id.0;
         let Some(mut pending) = self.pending_links.get(&id).cloned() else {
@@ -237,17 +244,10 @@ impl Contract {
             return false;
         }
         pending.in_flight = false;
-        let out = match result {
-            Ok(Some(out)) => out,
-            Ok(None) => VerifyOutput {
-                error: Some("OutLayer run failed".into()),
-                ..Default::default()
-            },
-            Err(_) => VerifyOutput {
-                error: Some("OutLayer call failed".into()),
-                ..Default::default()
-            },
-        };
+        let out = out.unwrap_or_else(|| VerifyOutput {
+            error: Some("OutLayer run failed".into()),
+            ..Default::default()
+        });
         let error = match (&out.ok, &out.x_id) {
             (true, Some(x_id)) if self.by_x.contains_key(x_id) => {
                 Some("X account already linked".into())

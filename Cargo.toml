@@ -6,6 +6,8 @@ members = [
     "crates/caps",
     "contracts/token",
     "contracts/core",
+    "contracts/mock-outlayer",
+    "tests/sandbox",
 ]
 
 [workspace.package]
