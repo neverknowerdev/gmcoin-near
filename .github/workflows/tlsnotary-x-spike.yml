@@ -1,0 +1,94 @@
+name: TLSNotary x.com spike
+
+on:
+  push:
+    branches: [spike/tlsnotary-x]
+  workflow_dispatch:
+
+jobs:
+  spike:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      TLSN_REV: eb19c82
+      RUST_LOG: warn
+      # Public bearer token used by the x.com web client for logged-out requests.
+      WEB_BEARER: AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check x.com TLS versions with openssl
+        run: |
+          for h in x.com api.x.com cdn.syndication.twimg.com; do
+            echo "== $h TLS1.2"; timeout 15 openssl s_client -connect $h:443 -servername $h -tls1_2 </dev/null 2>&1 | grep -E "Protocol|Cipher is|verify return" | head -3
+          done
+
+      - name: Fetch tlsn and add the spike example
+        run: |
+          git clone https://github.com/tlsnotary/tlsn.git tlsn
+          cd tlsn && git checkout $TLSN_REV
+          cp ../spikes/tlsnotary-x/x_spike.rs crates/examples/x_spike.rs
+          python3 - <<'PY'
+          p = 'crates/examples/Cargo.toml'
+          s = open(p).read()
+          s = s.replace('tlsn = { workspace = true }', 'tlsn = { workspace = true, features = ["mozilla-certs"] }', 1)
+          s += '\n[[example]]\nname = "x_spike"\npath = "x_spike.rs"\n'
+          open(p, 'w').write(s)
+          PY
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: tlsn
+
+      - name: Build
+        run: cd tlsn && cargo build --release --example x_spike
+
+      - name: Measure plain response sizes with curl
+        run: |
+          set +e
+          TID=20
+          TOKEN=$(python3 - <<'PY'
+          import math
+          tid = 20
+          x = (tid / 1e15) * math.pi
+          # base36 of a float, as react-tweet does with Number.toString(36)
+          digits = '0123456789abcdefghijklmnopqrstuvwxyz'
+          ip, fp = int(x), x - int(x)
+          s = ''
+          while ip: s = digits[ip % 36] + s; ip //= 36
+          s = s or '0'
+          f = ''
+          for _ in range(12):
+              fp *= 36; d = int(fp); f += digits[d]; fp -= d
+          print((s + f).replace('0', ''))
+          PY
+          )
+          echo "TOKEN=$TOKEN" >> $GITHUB_ENV
+          echo "TID=$TID" >> $GITHUB_ENV
+          echo "robots: $(curl -s -o /dev/null -w '%{http_code} %{size_download}B' https://x.com/robots.txt)"
+          echo "guest activate: $(curl -s -o /dev/null -w '%{http_code} %{size_download}B' -X POST -H "authorization: Bearer $WEB_BEARER" https://api.x.com/1.1/guest/activate.json)"
+          echo "syndication: $(curl -s -o /dev/null -w '%{http_code} %{size_download}B' "https://cdn.syndication.twimg.com/tweet-result?id=$TID&token=$TOKEN&lang=en")"
+
+      - name: "Proof 1: GET x.com/robots.txt"
+        continue-on-error: true
+        run: |
+          cd tlsn
+          TARGET_URL=https://x.com/robots.txt MAX_SENT=1024 MAX_RECV=16384 \
+            ./target/release/examples/x_spike 2>&1 | tail -20
+
+      - name: "Proof 2: POST api.x.com guest token"
+        continue-on-error: true
+        run: |
+          cd tlsn
+          TARGET_URL=https://api.x.com/1.1/guest/activate.json METHOD=POST \
+          HEADERS="authorization: Bearer $WEB_BEARER" HIDE=authorization \
+          MAX_SENT=1024 MAX_RECV=4096 \
+            ./target/release/examples/x_spike 2>&1 | tail -20
+
+      - name: "Proof 3: GET a public post (syndication JSON)"
+        continue-on-error: true
+        run: |
+          cd tlsn
+          TARGET_URL="https://cdn.syndication.twimg.com/tweet-result?id=$TID&token=$TOKEN&lang=en" \
+          MAX_SENT=1024 MAX_RECV=32768 \
+            ./target/release/examples/x_spike 2>&1 | tail -20
