@@ -4,6 +4,7 @@ members = [
     "crates/epochs",
     "crates/gm-scoring",
     "crates/caps",
+    "contracts/token",
 ]
 
 [workspace.package]
