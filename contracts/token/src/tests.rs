@@ -44,7 +44,10 @@ fn setup(fee_bps: u16) -> Contract {
 
 fn mint(c: &mut Contract, batch: u64, entries: &[(AccountId, u128)]) {
     testing_env!(ctx(core(), 0).build());
-    c.mint_batch(batch, entries.iter().map(|(a, n)| (a.clone(), U128(*n))).collect());
+    c.mint_batch(
+        batch,
+        entries.iter().map(|(a, n)| (a.clone(), U128(*n))).collect(),
+    );
 }
 
 #[test]
@@ -61,13 +64,25 @@ fn metadata_and_init() {
 #[should_panic(expected = "fee above 5%")]
 fn fee_is_hard_capped_at_init() {
     testing_env!(ctx(owner(), 0).build());
-    Contract::new(owner(), core(), treasury(), default_metadata(), U128(1), U128(1), 501);
+    Contract::new(
+        owner(),
+        core(),
+        treasury(),
+        default_metadata(),
+        U128(1),
+        U128(1),
+        501,
+    );
 }
 
 #[test]
 fn minter_mints_and_registers_receivers() {
     let mut c = setup(0);
-    mint(&mut c, 1, &[(alice(), 5 * GM), (bob(), 7 * GM), (treasury(), GM)]);
+    mint(
+        &mut c,
+        1,
+        &[(alice(), 5 * GM), (bob(), 7 * GM), (treasury(), GM)],
+    );
     assert_eq!(c.ft_balance_of(alice()).0, 5 * GM);
     assert_eq!(c.ft_balance_of(bob()).0, 7 * GM);
     assert_eq!(c.ft_total_supply().0, 13 * GM);

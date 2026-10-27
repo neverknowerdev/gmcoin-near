@@ -5,6 +5,7 @@ members = [
     "crates/gm-scoring",
     "crates/caps",
     "contracts/token",
+    "contracts/core",
 ]
 
 [workspace.package]

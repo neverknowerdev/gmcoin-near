@@ -64,6 +64,21 @@ pub fn post_contains(text: &str, code: &str) -> bool {
         .contains(&code.to_ascii_uppercase())
 }
 
+/// Extracts the numeric post id from a pasted X/Twitter link
+/// (`https://x.com/<user>/status/<id>?...`) or a bare id.
+pub fn parse_post_id(input: &str) -> Option<String> {
+    let s = input.trim();
+    let id = match s.find("/status/") {
+        Some(i) => &s[i + "/status/".len()..],
+        None => s,
+    };
+    let id: &str = id.split(['/', '?', '#']).next().unwrap_or("");
+    if id.is_empty() || id.len() > 25 || !id.bytes().all(|c| c.is_ascii_digit()) {
+        return None;
+    }
+    Some(String::from(id))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -97,6 +112,23 @@ mod tests {
         let text = alloc::format!("Linking my GM account {} gm!", code.to_lowercase());
         assert!(post_contains(&text, &code));
         assert!(!post_contains("gm", &code));
+    }
+
+    #[test]
+    fn parses_post_links() {
+        let id = Some(String::from("1850000000000000001"));
+        assert_eq!(
+            parse_post_id("https://x.com/alice/status/1850000000000000001"),
+            id
+        );
+        assert_eq!(
+            parse_post_id("https://twitter.com/a/status/1850000000000000001?s=20"),
+            id
+        );
+        assert_eq!(parse_post_id(" 1850000000000000001 "), id);
+        assert_eq!(parse_post_id("https://x.com/alice/status/abc"), None);
+        assert_eq!(parse_post_id("https://x.com/alice"), None);
+        assert_eq!(parse_post_id(""), None);
     }
 
     proptest! {

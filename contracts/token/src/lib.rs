@@ -69,6 +69,7 @@ pub struct TokenConfig {
 #[near]
 impl Contract {
     #[init]
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         owner: AccountId,
         minter: AccountId,
@@ -114,7 +115,10 @@ impl Contract {
             .try_fold(0u128, |acc, (_, a)| acc.checked_add(a.0))
             .unwrap_or_else(|| env::panic_str("amount overflow"));
         require!(
-            self.token.total_supply.checked_add(total).is_some_and(|s| s <= self.max_supply),
+            self.token
+                .total_supply
+                .checked_add(total)
+                .is_some_and(|s| s <= self.max_supply),
             "max supply exceeded"
         );
         let day = env::block_timestamp() / DAY_NS;
@@ -122,7 +126,10 @@ impl Contract {
             self.minted_day = day;
             self.minted_today = 0;
         }
-        require!(self.minted_today + total <= self.daily_mint_cap, "daily mint cap exceeded");
+        require!(
+            self.minted_today + total <= self.daily_mint_cap,
+            "daily mint cap exceeded"
+        );
         self.minted_today += total;
 
         for (account, amount) in &entries {
@@ -137,7 +144,11 @@ impl Contract {
         let events: Vec<FtMint> = entries
             .iter()
             .filter(|(_, a)| a.0 > 0)
-            .map(|(owner_id, amount)| FtMint { owner_id, amount: *amount, memo: None })
+            .map(|(owner_id, amount)| FtMint {
+                owner_id,
+                amount: *amount,
+                memo: None,
+            })
             .collect();
         if !events.is_empty() {
             FtMint::emit_many(&events);
@@ -200,12 +211,14 @@ impl Contract {
     pub fn upgrade(&mut self) -> near_sdk::Promise {
         require!(env::predecessor_account_id() == self.owner, "only owner");
         let code = env::input().unwrap_or_else(|| env::panic_str("no code"));
-        near_sdk::Promise::new(env::current_account_id()).deploy_contract(code).function_call(
-            "migrate",
-            vec![],
-            NearToken::from_yoctonear(0),
-            GAS_FOR_MIGRATE,
-        )
+        near_sdk::Promise::new(env::current_account_id())
+            .deploy_contract(code)
+            .function_call(
+                "migrate",
+                vec![],
+                NearToken::from_yoctonear(0),
+                GAS_FOR_MIGRATE,
+            )
     }
 
     #[private]
@@ -225,7 +238,11 @@ impl Contract {
             fee_bps: self.fee_bps,
             max_supply: U128(self.max_supply),
             daily_mint_cap: U128(self.daily_mint_cap),
-            minted_today: U128(if self.minted_day == day { self.minted_today } else { 0 }),
+            minted_today: U128(if self.minted_day == day {
+                self.minted_today
+            } else {
+                0
+            }),
             paused: self.paused,
         }
     }
@@ -250,7 +267,9 @@ impl Contract {
 
 impl Contract {
     fn fee(&self, sender: &AccountId, receiver: &AccountId, amount: u128) -> u128 {
-        if self.fee_bps == 0 || self.fee_exempt.contains(sender) || self.fee_exempt.contains(receiver)
+        if self.fee_bps == 0
+            || self.fee_exempt.contains(sender)
+            || self.fee_exempt.contains(receiver)
         {
             return 0;
         }
@@ -263,7 +282,8 @@ impl Contract {
         let fee = self.fee(sender, receiver, amount);
         if fee > 0 {
             let treasury = self.treasury.clone();
-            self.token.internal_transfer(sender, &treasury, fee, Some("fee".into()));
+            self.token
+                .internal_transfer(sender, &treasury, fee, Some("fee".into()));
         }
         amount - fee
     }
@@ -276,7 +296,8 @@ impl FungibleTokenCore for Contract {
         assert_one_yocto();
         let sender = env::predecessor_account_id();
         let net = self.take_fee(&sender, &receiver_id, amount.0);
-        self.token.internal_transfer(&sender, &receiver_id, net, memo);
+        self.token
+            .internal_transfer(&sender, &receiver_id, net, memo);
     }
 
     /// The receiver is told the net amount, so DEX deposits stay correct.
@@ -290,7 +311,8 @@ impl FungibleTokenCore for Contract {
     ) -> PromiseOrValue<U128> {
         let sender = env::predecessor_account_id();
         let net = self.take_fee(&sender, &receiver_id, amount.0);
-        self.token.ft_transfer_call(receiver_id, U128(net), memo, msg)
+        self.token
+            .ft_transfer_call(receiver_id, U128(net), memo, msg)
     }
 
     fn ft_total_supply(&self) -> U128 {
@@ -311,7 +333,8 @@ impl FungibleTokenResolver for Contract {
         receiver_id: AccountId,
         amount: U128,
     ) -> U128 {
-        self.token.ft_resolve_transfer(sender_id, receiver_id, amount)
+        self.token
+            .ft_resolve_transfer(sender_id, receiver_id, amount)
     }
 }
 
