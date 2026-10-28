@@ -16,6 +16,24 @@ use serde_json::{json, Value};
 const GM: u128 = 1_000_000_000_000_000_000;
 const TGAS300: Gas = Gas::from_tgas(300);
 
+/// The public testnet RPC rate-limits bursts of requests.
+fn rate_limited(e: &near_workspaces::error::Error) -> bool {
+    let mut err: Option<&dyn std::error::Error> = Some(e);
+    while let Some(x) = err {
+        if x.to_string().contains("rate limit") {
+            return true;
+        }
+        err = x.source();
+    }
+    false
+}
+
+async fn backoff(attempt: &mut u32) {
+    *attempt += 1;
+    eprintln!("testnet RPC rate limit, retry {attempt}");
+    tokio::time::sleep(std::time::Duration::from_secs(2u64 << *attempt)).await;
+}
+
 struct Ctx {
     worker: Worker<Testnet>,
     master: Account,
@@ -57,12 +75,19 @@ async fn ctx() -> Result<Ctx> {
 
 impl Ctx {
     async fn view(&self, contract: &AccountId, method: &str, args: Value) -> Result<Value> {
-        Ok(self
-            .worker
-            .view(contract, method)
-            .args_json(args)
-            .await?
-            .json()?)
+        let mut attempt = 0;
+        loop {
+            match self
+                .worker
+                .view(contract, method)
+                .args_json(args.clone())
+                .await
+            {
+                Ok(r) => return Ok(r.json()?),
+                Err(e) if rate_limited(&e) && attempt < 6 => backoff(&mut attempt).await,
+                Err(e) => return Err(e.into()),
+            }
+        }
     }
 
     async fn call(
@@ -73,13 +98,23 @@ impl Ctx {
         args: Value,
         deposit: NearToken,
     ) -> Result<Value> {
-        let r = who
-            .call(contract, method)
-            .args_json(args)
-            .deposit(deposit)
-            .gas(TGAS300)
-            .transact()
-            .await?;
+        // A rate-limited RPC request is rejected before the transaction is
+        // sent, so retrying it cannot execute the call twice.
+        let mut attempt = 0;
+        let r = loop {
+            match who
+                .call(contract, method)
+                .args_json(args.clone())
+                .deposit(deposit)
+                .gas(TGAS300)
+                .transact()
+                .await
+            {
+                Ok(r) => break r,
+                Err(e) if rate_limited(&e) && attempt < 6 => backoff(&mut attempt).await,
+                Err(e) => return Err(e.into()),
+            }
+        };
         if let Some(f) = r.receipt_failures().first() {
             anyhow::bail!("{method} failed: {:?}", (*f).clone().into_result());
         }
@@ -104,7 +139,12 @@ impl Ctx {
             .into_result()?)
     }
 
+    /// Replaces the mock's queue, so outputs left by an interrupted run
+    /// cannot answer this run's requests.
     async fn script(&self, items: Value) -> Result<()> {
+        let zero = NearToken::from_yoctonear(0);
+        self.call(&self.master, &self.outlayer, "clear", json!({}), zero)
+            .await?;
         self.call(
             &self.master,
             &self.outlayer,
