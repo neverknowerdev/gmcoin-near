@@ -1,0 +1,15 @@
+[package]
+name = "x-scan"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+publish = false
+
+[[bin]]
+name = "x-scan"
+path = "src/main.rs"
+
+[dependencies]
+x-client.workspace = true
+wasi-http.workspace = true
+serde_json.workspace = true

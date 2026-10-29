@@ -1,0 +1,20 @@
+# NOTE: all names/ids below are PLACEHOLDERS. The mainnet account name is undecided.
+name = "gmcoin-relayer"
+main = "src/index.ts"
+compatibility_date = "2025-01-01"
+
+[vars]
+CORE_CONTRACT_ID = "core.gmcoin.testnet"      # placeholder
+RELAYER_ACCOUNT_ID = "relayer.gmcoin.testnet" # placeholder
+NEAR_RPC_URL = "https://rpc.testnet.near.org"
+ALLOWED_ORIGIN = "*"                          # set to the frontend origin in production
+MAX_GAS_PER_ACTION = "300000000000000"
+ALLOW_NO_TURNSTILE = "0"                      # "1" only for testnet staging with no TURNSTILE_SECRET
+PAUSED = "0"
+# Optional: RELAY_LIMIT_PER_ACCOUNT_DAY, RELAY_LIMIT_PER_IP_DAY, EST_COST_YOCTO, HOURLY_SPEND_CAP_YOCTO
+
+[[kv_namespaces]]
+binding = "LIMITS"
+id = "00000000000000000000000000000000"       # placeholder: `wrangler kv namespace create LIMITS`
+
+# Secrets (wrangler secret put): RELAYER_PRIVATE_KEY, TURNSTILE_SECRET

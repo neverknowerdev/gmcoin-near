@@ -1,0 +1,40 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/epochs",
+    "crates/gm-scoring",
+    "crates/caps",
+    "crates/x-client",
+    "contracts/token",
+    "contracts/core",
+    "contracts/mock-outlayer",
+    "tests/sandbox",
+    "tests/modules",
+    "tests/testnet",
+]
+# OutLayer modules build for wasm32-wasip2 in their own workspace.
+exclude = ["modules"]
+
+[workspace.package]
+edition = "2021"
+license = "MIT"
+repository = "https://github.com/neverknowerdev/gmcoin-near"
+
+[workspace.dependencies]
+near-sdk = "5.30.0"
+near-contract-standards = "5.30.0"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+proptest = "1.12"
+gm-scoring = { path = "crates/gm-scoring" }
+epochs = { path = "crates/epochs" }
+caps = { path = "crates/caps" }
+x-client = { path = "crates/x-client" }
+
+[profile.release]
+codegen-units = 1
+opt-level = "z"
+lto = true
+debug = false
+panic = "abort"
+overflow-checks = true

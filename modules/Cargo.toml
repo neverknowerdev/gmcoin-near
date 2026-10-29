@@ -1,0 +1,17 @@
+# OutLayer modules: WASI P2 binaries that run in OutLayer's TEE.
+# Build: cargo build --release --target wasm32-wasip2 (see scripts/build-modules.sh)
+[workspace]
+resolver = "2"
+members = ["wasi-http", "x-verify", "x-scan"]
+
+[workspace.dependencies]
+x-client = { path = "../crates/x-client" }
+wasi-http = { path = "wasi-http" }
+serde_json = "1"
+wasi-http-client = "=0.2.1"
+
+[profile.release]
+opt-level = "z"
+lto = true
+strip = true
+codegen-units = 1

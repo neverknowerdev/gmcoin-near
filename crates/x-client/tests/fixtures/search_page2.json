@@ -1,0 +1,17 @@
+{"data":{"search_by_raw_query":{"search_timeline":{"timeline":{"instructions":[
+ {"type":"TimelineAddEntries","entries":[
+  {"entryId":"tweet-1850000000000000013","content":{"content":{"tweet_results":{"rest_id":"1850000000000000013","result":{
+    "rest_id":"1850000000000000013",
+    "core":{"user_results":{"result":{"rest_id":"999","core":{"name":"Stranger","screen_name":"stranger"}}}},
+    "legacy":{"full_text":"gm","favorite_count":9000,"created_at":"Sun Nov 01 11:00:00 +0000 2026"}}}}}},
+  {"entryId":"tweet-1850000000000000014","content":{"content":{"tweet_results":{"rest_id":"1850000000000000014","result":{
+    "rest_id":"1850000000000000014",
+    "core":{"user_results":{"result":{"rest_id":"202","core":{"name":"Bob","screen_name":"bob"}}}},
+    "legacy":{"full_text":"gm from yesterday","favorite_count":3,"created_at":"Sat Oct 31 23:00:00 +0000 2026"}}}}}},
+  {"entryId":"tweet-1850000000000000010","content":{"content":{"tweet_results":{"rest_id":"1850000000000000010","result":{
+    "rest_id":"1850000000000000010",
+    "core":{"user_results":{"result":{"rest_id":"101","core":{"name":"Alice","screen_name":"alice_gm"}}}},
+    "legacy":{"full_text":"gm frens","favorite_count":4,"created_at":"Sun Nov 01 09:00:00 +0000 2026"}}}}}},
+  {"entryId":"cursor-bottom-1","content":{"cursor_type":"Bottom","value":"CURSOR_PAGE_3"}}
+ ]}
+]}}}}}

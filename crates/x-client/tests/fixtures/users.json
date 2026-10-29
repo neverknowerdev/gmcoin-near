@@ -1,0 +1,5 @@
+{"data":{"users":[
+ {"rest_id":"101","result":{"core":{"name":"Alice","screen_name":"alice_gm"}}},
+ {"rest_id":"202","result":{"core":{"name":"Bob","screen_name":"bob"}}},
+ {"rest_id":"303","result":{"legacy":{"screen_name":"carol"}}}
+]}}

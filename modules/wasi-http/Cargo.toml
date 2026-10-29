@@ -1,0 +1,10 @@
+[package]
+name = "wasi-http"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "x-client HttpClient over wasi-http, plus the stdin/stdout/env glue shared by the modules"
+
+[dependencies]
+x-client.workspace = true
+wasi-http-client.workspace = true

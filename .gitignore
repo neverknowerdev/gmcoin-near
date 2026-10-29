@@ -1,0 +1,11 @@
+/target
+node_modules/
+.env
+*.local
+/res/*.wasm
+.near-credentials/
+/modules/target
+deploy/*.out.json
+
+frontend/node_modules
+frontend/dist

@@ -1,0 +1,42 @@
+{
+  "_comment": "Staging parameters: a 10-minute day and a 70-minute week. B0, MAX_SUPPLY and tip size are still open; these are placeholders.",
+  "day_length_seconds": 600,
+  "days_per_epoch": 7,
+  "token": {
+    "max_supply_gm": "1000000000",
+    "daily_mint_cap_gm": "10000000",
+    "fee_bps": 100
+  },
+  "core": {
+    "emission": {
+      "b0_gm": "1000000",
+      "decay_bps": 150,
+      "step_cap_bps": 1000,
+      "floor_bps": 1000,
+      "ceiling_mult": 3,
+      "baseline_active": 100,
+      "treasury_bps": 300,
+      "active_min_days": 3
+    },
+    "unverified_cap_gm": "1000",
+    "tip_gm": "1",
+    "tip_daily_limit_gm": "500",
+    "register_deposit_near": "0.01",
+    "sponsored_storage_cost_near": "0.01",
+    "sponsor_checks_per_user_per_day": 3,
+    "sponsor_daily_budget_near": "5",
+    "sponsor_registrations_per_day": 200,
+    "sponsor_reclaim_after_days": 7,
+    "scan_delay_seconds": 0,
+    "scan_batch_size": 25,
+    "scan_max_in_flight": 4,
+    "scan_max_attempts": 3,
+    "settle_chunk": 50
+  },
+  "modules": {
+    "max_instructions": "10000000000",
+    "max_memory_mb": 128,
+    "max_execution_seconds": 20,
+    "deposit_near": "0.1"
+  }
+}
