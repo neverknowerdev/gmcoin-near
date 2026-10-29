@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { setupWalletSelector, type WalletSelector } from "@near-wallet-selector/core";
+import { setupWalletSelector, type WalletSelector, type WalletModuleFactory } from "@near-wallet-selector/core";
 import { setupModal, type WalletSelectorModal } from "@near-wallet-selector/modal-ui";
 import { setupMyNearWallet } from "@near-wallet-selector/my-near-wallet";
 import { setupMeteorWallet } from "@near-wallet-selector/meteor-wallet";
@@ -48,10 +48,16 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     let cancelled = false;
     (async () => {
       try {
+        const modules: WalletModuleFactory[] = [setupMyNearWallet(), setupMeteorWallet()];
+        // Staging-only test wallet; the constant check lets the bundler drop it from normal builds.
+        if (import.meta.env.VITE_TEST_KEY_WALLET === "1") {
+          const { setupTestWallet } = await import("./testWallet");
+          modules.unshift(setupTestWallet({ rpc: config.rpc }) as WalletModuleFactory);
+        }
         const selector = await setupWalletSelector({
           network: config.network,
           relayerUrl: config.relayer ?? undefined,
-          modules: [setupMyNearWallet(), setupMeteorWallet()],
+          modules,
         });
         if (cancelled) return;
         selectorRef.current = selector;

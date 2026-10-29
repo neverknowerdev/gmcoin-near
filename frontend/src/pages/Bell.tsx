@@ -27,7 +27,7 @@ export function Bell() {
           NEAR has no cron, so anyone can push the pipeline along. Each button below does one step only when it is due, and the
           caller earns a GM tip
           {settings.data ? ` (${formatGm(settings.data.tipAmount)} GM per step that did work, up to ${formatGm(settings.data.tipDailyLimit)} GM a day in total)` : ""}
-          . An early or repeated call does nothing but cost a little gas. Each call attaches 300 TGas; unused gas is refunded.
+          . An early or repeated call does nothing but cost a little gas. Each call attaches 300 TGas, which reserves 0.3 NEAR from your balance until the call ends; unused gas is refunded.
         </p>
         {!wallet.accountId && (
           <p>

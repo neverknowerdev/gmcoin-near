@@ -13,6 +13,10 @@
     "e2e": "playwright test"
   },
   "dependencies": {
+    "@near-js/accounts": "2.2.5",
+    "@near-js/crypto": "2.5.1",
+    "@near-js/providers": "2.5.1",
+    "@near-js/signers": "2.5.1",
     "@near-js/transactions": "2.5.1",
     "@near-wallet-selector/core": "10.1.4",
     "@near-wallet-selector/meteor-wallet": "10.1.4",

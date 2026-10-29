@@ -1,4 +1,5 @@
 /** Plain fetch JSON-RPC view calls. */
+import { retryRateLimit } from "./retry";
 
 export async function callView<T = unknown>(
   rpc: string,
@@ -19,13 +20,18 @@ export async function callView<T = unknown>(
       args_base64: btoa(JSON.stringify(args)),
     },
   };
-  const res = await fetchImpl(rpc, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify(body),
-  });
-  if (!res.ok) throw new Error(`RPC HTTP ${res.status}`);
-  return decodeViewResponse<T>(await res.json(), method);
+  return retryRateLimit(
+    async () => {
+      const res = await fetchImpl(rpc, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) throw new Error(`RPC HTTP ${res.status}`);
+      return decodeViewResponse<T>(await res.json(), method);
+    },
+    { tries: 4, baseMs: 1000 },
+  );
 }
 
 export function decodeViewResponse<T = unknown>(json: any, method = "view"): T {

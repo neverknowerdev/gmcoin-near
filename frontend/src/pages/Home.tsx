@@ -199,7 +199,7 @@ export function Home() {
                           Verify (300 TGas)
                         </TxButton>
                         <p className="muted small">
-                          Created {formatNsDate(pending.data.createdAt)}. Verification runs off-chain in a TEE and can take a minute;
+                          Created {formatNsDate(pending.data.createdAt)}. Verify attaches 300 TGas, which reserves 0.3 NEAR from your balance until the call ends (unused gas is refunded). Verification runs off-chain in a TEE and can take a minute;
                           press refresh above to see the result.
                         </p>
                         <TxButton className="btn link" spec={startXLink(config.core)} onDone={(ok) => ok && reloadAll()}>
