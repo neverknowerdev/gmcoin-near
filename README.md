@@ -58,3 +58,22 @@ cargo test -p sandbox-tests   # local NEAR node
 ```
 
 Testnet: see [docs/DEPLOY.md](docs/DEPLOY.md).
+
+## NEAR HACKATHON
+
+Built for [NEAR HACKATHON](https://nearhackathon.com) (2026-11-01 to 2026-11-14;
+code allowed from the 2026-10-19 announcement, rule Q-001). Every commit on this
+branch is hackathon work: the repository started empty on 2026-10-27
+(`700abc2`, README only). Full diff: `main...near-hackathon-build`.
+
+- **Existing product (Q-002).** GM Coin v1 is an ERC-20 on Base with its own
+  contracts and backend. None of its code is used here; this repo reuses v1's
+  rules (scoring points, daily caps, link-code format, X search query shape),
+  rewritten in Rust for NEAR. The weekly budget emission, the tick design, the
+  OutLayer modules and the relayer are new.
+- **Libraries (Q-005).** near-sdk and near-contract-standards 5.30,
+  near-workspaces 0.24, cargo-near, wasi-http-client, serde, proptest,
+  wasmtime + wiremock (tests), near-api-js 7 and Cloudflare Workers (relayer),
+  vitest. No pre-hackathon code of our own.
+- **AI code (Q-005).** Most code was written with Claude Code and reviewed by
+  the team.
